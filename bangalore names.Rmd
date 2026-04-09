@@ -1,0 +1,248 @@
+---
+title: "Bangalore Names"
+output: html_notebook
+---
+```{r}
+require(tidyverse)
+load('bangaloreFirstNames.RData')
+```
+
+
+Do younger people have shorter names? 
+
+```{r}
+p5 %>% 
+  filter(Sex %in% c("M", "F")) %>% 
+  group_by(Age, Sex) %>% 
+  summarise(AvgLength=mean(namelength), Num=n()) %>% 
+  filter(Num > 1000) %>% 
+  ggplot(aes(x=Age,y=AvgLength, col=Sex)) + geom_line() + 
+  theme_bw() + scale_color_brewer(palette='Set1')
+
+```
+
+```{r}
+p5 %>% 
+  filter(Sex %in% c("M", "F") & Age >= 18 & Age <= 80) %>% 
+  mutate(AgeGroup=5* (Age%/%5)) %>%
+  group_by(Sex, AgeGroup) %>%
+  summarise(AvgLength=mean(namelength), SDLength=sd(namelength))
+  
+```
+
+What is the incidence of sufixes such as -appa, -amma, -akka, -anna, -aiah, -ayya in Bangalore? 
+
+
+Law of conservation of H applies? 
+```{r}
+p5 %>%
+  filter(word %in% c("swetha", "shwetha", "sweta", 'shweta')) %>%
+  count(word)
+
+p5 %>%
+  filter(word %in% c("sruti", "shruti", "sruthi", 'shruthi')) %>%
+  count(word)
+
+p5 %>%
+  filter(word %in% c("sekhar", "shekhar", "sekar", 'shekar')) %>%
+  count(word)
+
+
+```
+
+```{r}
+namecount <- p5 %>% count(Sex, word, sort=T)
+```
+
+```{r}
+head(namecount)
+```
+
+```{r}
+namecount %>%
+  filter(grepl('th', word)) %>%
+  mutate(altName=gsub('th', 't', word)) %>%
+  left_join(namecount %>% rename(altName=word, altNum=n), by=c('Sex', 'altName')) %>%
+  mutate(total=n+altNum, thProp=n/total) %>%
+  filter(altNum > 100 & total > 1000 & n > 100) %>%
+  arrange(-thProp) %>%
+  group_by(Sex)
+```
+
+```{r}
+namecount %>%
+  filter(grepl('sh', word)) %>%
+  mutate(altName=gsub('sh', 's', word)) %>%
+  left_join(namecount %>% rename(altName=word, altNum=n), by=c('Sex', 'altName')) %>%
+  mutate(total=n+altNum, thProp=n/total) %>%
+  filter(altNum > 100 & total > 1000 & n > 100) %>%
+  arrange(-thProp) %>%
+  group_by(Sex)
+```
+Appa amma ayya akka anna in the names - how does it show age? 
+```{r}
+oldNames <- p5 %>% 
+  filter(Sex=='M' & grepl('appa',word) | grepl('anna',word) | grepl('aiah',word) | grepl('ayya',word) & !is.na(Age) & Age >= 18 & Age <=80) %>%
+  group_by(word) %>%
+  summarise(Num=n(), AvgAge=mean(Age, na.rm=T)) %>%
+  mutate(shortName=gsub('.{3}$', '', word)) %>%
+  inner_join(
+    p5 %>% 
+      filter(Age >= 18 & Age <=80 & Sex=='M') %>%
+      group_by(word) %>%
+      summarise(AgeShort=mean(Age, na.rm=T), Num2=n()) %>%
+      ungroup() %>%
+      rename(shortName=word), 
+    by='shortName'
+    )
+
+```
+
+```{r}
+oldNames %>%
+  mutate(Total=Num+Num2) %>%
+  filter(Num > 1000 & Num2 > 1000) %>%
+  arrange(-Total) %>%
+  group_by(shortName) 
+```
+
+```{r}
+oldNameWomen <- p5 %>% 
+  filter(Sex=='F' & grepl('amma',word) | grepl('akka',word) & !is.na(Age) & Age >= 18 & Age <=80) %>%
+  group_by(word) %>%
+  summarise(Num=n(), AvgAge=mean(Age, na.rm=T)) %>%
+  mutate(shortName=gsub('.{3}$', '', word), shortName2=gsub('.{4}$', 'i', word)) %>%
+  ungroup() %>%
+  gather(type, shortName, -word, -Num, -AvgAge) %>%
+  select(-type) %>%
+  inner_join(
+    p5 %>% 
+      filter(Age >= 18 & Age <=80 & Sex=='F') %>%
+      group_by(word) %>%
+      summarise(AgeShort=mean(Age, na.rm=T), Num2=n()) %>%
+      ungroup() %>%
+      rename(shortName=word), 
+    by='shortName'
+    )
+
+```
+
+```{r}
+oldNameWomen %>%
+  mutate(Total=Num+Num2) %>%
+  filter(Num > 1000 & Num2 > 1000) %>%
+  arrange(-Total) %>%
+  group_by(shortName) 
+```
+
+```{r}
+oldNames %>%
+  mutate(Total=Num+Num2) %>%
+  filter(Num > 1000 & Num2 > 1000) %>%
+  arrange(-Total) %>%
+  distinct(shortName, .keep_all=T) %>%
+  head(12) %>%
+  select(longName=word, shortName) %>%
+  mutate(Pair=paste(longName, shortName, sep='-')) %>%
+  gather(title, word, -Pair) %>%
+  left_join(
+    p5 %>%
+      filter(Sex=='M') %>%
+      select(word, Age),
+    by='word'
+  ) %>%
+  ggplot(aes(x=Age, col=title)) + geom_density() + facet_wrap(~Pair) + theme_bw() + scale_color_brewer(palette='Set1') + scale_y_continuous('', breaks=c())
+  
+  
+```
+
+```{r}
+oldNameWomen %>%
+  mutate(Total=Num+Num2) %>%
+  filter(Num > 1000 & Num2 > 1000) %>%
+  arrange(-Total) %>%
+  head(12) %>%
+  select(longName=word, shortName) %>%
+  mutate(Pair=paste(longName, shortName, sep='-')) %>%
+  gather(title, word, -Pair) %>%
+  left_join(
+    p5 %>%
+      filter(Sex=='M') %>%
+      select(word, Age),
+    by='word'
+  ) %>%
+  ggplot(aes(x=Age, col=title)) + geom_density() + facet_wrap(~Pair) + theme_bw() + scale_color_brewer(palette='Set1') + scale_y_continuous('', breaks=c())
+
+```
+
+```{r}
+head(p5)
+```
+```{r}
+p5 %>%
+  filter(Sex=='M' & Age >= 18 & Age <=80 & word != 'blank') %>%
+  group_by(word, Sex) %>%
+  summarise(AvgAge=mean(Age), Num=n()) %>% 
+  filter(Num > 10000) %>%
+  ggplot(aes(x=AvgAge, y=Num, label=word)) + geom_text() + geom_point() + theme_bw() + xlab('Average Age') + ylab('Number') + ggtitle("Average age of popular names: Male")
+
+p5 %>%
+  filter(Sex =='F' & Age >= 18 & Age <=80 & word != 'blank') %>%
+  group_by(word, Sex) %>%
+  summarise(AvgAge=mean(Age), Num=n()) %>% 
+  filter(Num > 10000) %>%
+  ggplot(aes(x=AvgAge, y=Num, label=word)) + geom_text() + geom_point() + theme_bw() + xlab('Average Age') + ylab('Number') + ggtitle("Average age of popular names: Female")
+  
+```
+
+Are names starting with A becoming more popular? 
+
+```{r}
+p5 %>%
+  filter(Age >= 18 & Age <= 80 &  Sex %in% c("M","F") & word != 'blank') %>%
+  mutate(initial=substr(word,1,1)) %>%
+  count(initial, Age, Sex) %>%
+  group_by(Age, Sex) %>%
+  mutate(Prop=n/sum(n)) %>%
+  ggplot(aes(x=Age, y=Prop, col=Sex)) + geom_line() + facet_wrap(~initial)
+```
+
+```{r}
+
+p5 %>%
+  filter(Sex %in% c('M', 'F') & Age >= 18 & Age <=80 & word != 'blank') %>%
+  group_by(word, Sex) %>%
+  summarise(AvgAge=mean(Age), Num=n()) %>% 
+  filter(Num > 1000) %>%
+  arrange(AvgAge) %>%
+  tail()
+
+```
+
+```{r}
+p5 %>% filter(word %in% c('subramanya', 'subramanian', 'subramaniam')) %>% ggplot(aes(x=Age)) + geom_histogram(binwidth = 1) + facet_wrap(~word, scales='free')
+```
+
+```{r}
+p5 %>% filter(grepl('Prabha H R',Name))
+```
+```{r}
+p5 %>% filter(Name=='Priyanka V Bharadwaj')
+```
+
+
+Names common among both men and women
+```{r}
+p5 %>%
+  filter(Sex %in% c("M", "F") & Age >= 18 & Age <=80  & word != 'blank') %>%
+  count(word, Sex) %>%
+  filter(n > 1000) %>%
+  spread(Sex, n) %>% 
+  filter(complete.cases(.)) %>%
+  mutate(Total=M+`F`, MProp=M/Total, Deviation=abs(MProp-0.5)) %>% 
+  arrange(Deviation, -Total) %>%
+  group_by(word)
+
+
+```
+

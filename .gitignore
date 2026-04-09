@@ -1,0 +1,16 @@
+# Large raw source files
+*.RData
+*.nb.html
+kargis.csv
+karid.csv
+karrolls2014.csv
+karnatakavotersurveydaksh.csv
+bangalore voter list.csv
+bangalore first names.csv
+
+# Keep generated popularity outputs
+!**/*_popularity.csv
+!**/*_popularity.png
+
+# OS noise
+.DS_Store
