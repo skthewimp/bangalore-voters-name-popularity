@@ -21,7 +21,8 @@ parse_args <- function(args) {
     end_year = NA_integer_,
     smooth_window = 3L,
     out_csv = NA_character_,
-    out_png = NA_character_
+    out_png = NA_character_,
+    out_dir = "outputs"
   )
 
   if (length(args) == 0) return(defaults)
@@ -43,7 +44,7 @@ parse_args <- function(args) {
   defaults$min_age <- to_int(defaults$min_age, 18L)
   defaults$max_age <- to_int(defaults$max_age, 110L)
   defaults$min_total_per_year <- to_int(defaults$min_total_per_year, 5000L)
-  defaults$min_name_count_per_year <- to_int(defaults$min_name_count_per_year, 20L)
+  defaults$min_name_count_per_year <- to_int(defaults$min_name_count_per_year, 5L)
   defaults$start_year <- to_int(defaults$start_year, NA_integer_)
   defaults$end_year <- to_int(defaults$end_year, NA_integer_)
   defaults$smooth_window <- to_int(defaults$smooth_window, 3L)
@@ -88,13 +89,15 @@ if (query_name == "") stop("Name is empty after normalization")
 out_csv <- if (!is.na(opt$out_csv) && nzchar(opt$out_csv)) {
   opt$out_csv
 } else {
-  sprintf("%s_popularity.csv", query_name)
+  file.path(opt$out_dir, sprintf("%s_popularity.csv", query_name))
 }
 out_png <- if (!is.na(opt$out_png) && nzchar(opt$out_png)) {
   opt$out_png
 } else {
-  sprintf("%s_popularity.png", query_name)
+  file.path(opt$out_dir, sprintf("%s_popularity.png", query_name))
 }
+
+dir.create(opt$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 dt <- fread(opt$csv, select = c("Age", "Sex", "word", "Name"), showProgress = FALSE)
 

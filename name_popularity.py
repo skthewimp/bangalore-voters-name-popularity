@@ -86,12 +86,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--out-csv",
         default=None,
-        help="Output CSV path (default: <name>_popularity.csv)",
+        help="Output CSV path (default: outputs/<name>_popularity.csv)",
     )
     parser.add_argument(
         "--out-png",
         default=None,
-        help="Output PNG path (default: <name>_popularity.png)",
+        help="Output PNG path (default: outputs/<name>_popularity.png)",
     )
     return parser.parse_args()
 
@@ -235,8 +235,11 @@ def main() -> None:
     if not query_name:
         raise ValueError("Query name is empty after normalization")
 
-    out_csv = Path(args.out_csv) if args.out_csv else Path(f"{query_name}_popularity.csv")
-    out_png = Path(args.out_png) if args.out_png else Path(f"{query_name}_popularity.png")
+    out_dir = Path("outputs")
+    out_csv = Path(args.out_csv) if args.out_csv else out_dir / f"{query_name}_popularity.csv"
+    out_png = Path(args.out_png) if args.out_png else out_dir / f"{query_name}_popularity.png"
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    out_png.parent.mkdir(parents=True, exist_ok=True)
 
     rows, meta = collect_year_rows(
         csv_path=csv_path,
