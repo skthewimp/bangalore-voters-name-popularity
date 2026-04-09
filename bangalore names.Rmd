@@ -10,7 +10,6 @@ load('bangaloreFirstNames.RData')
 ## Name Popularity Output Location
 
 Generated name-popularity artifacts are stored in `outputs/`:
-- `outputs/<name>_popularity.csv`
 - `outputs/<name>_popularity.png`
 
 

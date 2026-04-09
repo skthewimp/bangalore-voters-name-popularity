@@ -84,11 +84,6 @@ def parse_args() -> argparse.Namespace:
         help="Centered rolling mean window for plotted trend",
     )
     parser.add_argument(
-        "--out-csv",
-        default=None,
-        help="Output CSV path (default: outputs/<name>_popularity.csv)",
-    )
-    parser.add_argument(
         "--out-png",
         default=None,
         help="Output PNG path (default: outputs/<name>_popularity.png)",
@@ -185,17 +180,6 @@ def filter_rows(
     return out
 
 
-def write_csv(path: Path, rows: list[YearRow], smooth_window: int) -> None:
-    smoothed = rolling_mean([r.share_pct for r in rows], smooth_window)
-    with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(
-            ["year", "total_people", "name_count", "share_pct", "share_pct_smoothed"]
-        )
-        for r, s in zip(rows, smoothed):
-            writer.writerow([r.year, r.total_people, r.name_count, f"{r.share_pct:.6f}", f"{s:.6f}"])
-
-
 def make_plot(path: Path, rows: list[YearRow], query_name: str, sex_filter: str, smooth_window: int) -> None:
     try:
         import matplotlib.pyplot as plt
@@ -236,9 +220,7 @@ def main() -> None:
         raise ValueError("Query name is empty after normalization")
 
     out_dir = Path("outputs")
-    out_csv = Path(args.out_csv) if args.out_csv else out_dir / f"{query_name}_popularity.csv"
     out_png = Path(args.out_png) if args.out_png else out_dir / f"{query_name}_popularity.png"
-    out_csv.parent.mkdir(parents=True, exist_ok=True)
     out_png.parent.mkdir(parents=True, exist_ok=True)
 
     rows, meta = collect_year_rows(
@@ -263,7 +245,6 @@ def main() -> None:
             "No years left after filtering. Lower --min-total-per-year or --min-name-count-per-year."
         )
 
-    write_csv(path=out_csv, rows=filtered, smooth_window=args.smooth_window)
     make_plot(
         path=out_png,
         rows=filtered,
@@ -272,7 +253,6 @@ def main() -> None:
         smooth_window=args.smooth_window,
     )
 
-    print(f"Saved CSV: {out_csv}")
     print(f"Saved PNG: {out_png}")
     print(
         "Applied filters:"

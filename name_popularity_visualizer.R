@@ -20,7 +20,6 @@ parse_args <- function(args) {
     start_year = NA_integer_,
     end_year = NA_integer_,
     smooth_window = 3L,
-    out_csv = NA_character_,
     out_png = NA_character_,
     out_dir = "outputs"
   )
@@ -86,11 +85,6 @@ if (!file.exists(opt$csv)) {
 query_name <- normalize_name(opt$name)
 if (query_name == "") stop("Name is empty after normalization")
 
-out_csv <- if (!is.na(opt$out_csv) && nzchar(opt$out_csv)) {
-  opt$out_csv
-} else {
-  file.path(opt$out_dir, sprintf("%s_popularity.csv", query_name))
-}
 out_png <- if (!is.na(opt$out_png) && nzchar(opt$out_png)) {
   opt$out_png
 } else {
@@ -151,7 +145,6 @@ if (nrow(res) == 0) {
 res[, share_pct_smoothed := roll_mean_center(share_pct, opt$smooth_window)]
 
 setnames(res, "birth_year", "year")
-fwrite(res, out_csv)
 
 p <- ggplot(res, aes(x = year)) +
   geom_line(aes(y = share_pct), color = "#8a8a8a", linewidth = 0.7, alpha = 0.8) +
@@ -169,7 +162,6 @@ p <- ggplot(res, aes(x = year)) +
 
 ggsave(out_png, p, width = 11, height = 6, dpi = 150)
 
-cat(sprintf("Saved CSV: %s\n", out_csv))
 cat(sprintf("Saved PNG: %s\n", out_png))
 cat(sprintf("Rows used after filters: %d\n", nrow(res)))
 cat(sprintf(

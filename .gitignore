@@ -9,7 +9,6 @@ bangalore voter list.csv
 bangalore first names.csv
 
 # Keep generated popularity outputs
-!**/*_popularity.csv
 !**/*_popularity.png
 
 # OS noise
